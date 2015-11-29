@@ -1,0 +1,121 @@
+
+<!DOCTYPE html> 
+<html>
+
+<head>
+	<title>CreateDigitalInput</title> 
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet"  href="../css/themes/default/theme.min.css" />
+		<link rel="stylesheet"  href="../css/themes/default/jquery.mobile.structure-1.2.0.min.css" />
+		<script src="../js/energize-min.js"></script>
+		<script src="../js/jquery-1.8.1.min.js"></script>
+		<script src="../../../app.js"></script>
+		<script src="../js/example.js"></script>
+		<link rel="stylesheet" href="../css/docs.css" />
+		<script src="../js/jquery.mobile-1.2.0.min.js"></script>
+</head> 
+
+<body> 
+
+<div data-role="page" data-theme="a">
+
+	<div data-role="header" data-position="fixed">
+		<a href='#' class='ui-btn-left' data-icon='arrow-l' data-theme="c" onclick="history.back(); return false">Back</a> <h1>CreateDigitalInput</h1>
+	</div><!-- /header -->
+
+	<div data-role="content">	
+			
+		<p> The <b>CreateDigitalInput</b> function creates an object which manages Digital input for a particular pin on the IOIO board.</p>
+		
+		<div class="samp">&nbsp;input = ioio.CreateDigitalInput( pinNum, mode );</div>
+	
+		<p>Put the number of the pin you wish to use in the <b>pinNum</b> parameter. Any of the 48 pins can be used as a digital input but
+		be careful not to supply voltage levels outside the allowed range for each pin, or else you might <b>damage</b> your IOIO board. 
+		(Most pins are 3.3V tolerant but those marked with a circle are 5V tolerant)<p/>
+		
+		<p>See <a href="http://github.com/ytai/ioio/wiki/Digital-Io" target="_blank"> http://github.com/ytai/ioio/wiki/Digital-Io </a> for more details.</p>
+		
+		<p>If you leave out the <b>mode</b> parameter the pin will be opened in normal <b>"Floating"</b> mode.  Setting the 
+		mode parameter to <b>"PullUp"</b> will cause the pin to be gently 'pulled up' to 3.3V and setting it to.<b>"PullDown"</b> will cause
+		the pin to be gently 'pulled down' to 0V.</p>
+		
+		<p>Use the <b>Read</b> function of the DigitalInput Object to read the pin state, which is returned as logical true or false. (true = High, false = Low).</p>
+		
+		<div class="samp">&nbsp;val = input.Read();</div>
+		
+		<p>The following example makes use of the JavaScript <b>setInterval</b> function to repeatedly read the value on pin 12, every 3 seconds.</p>
+		
+		<div data-role="collapsible" data-collapsed="true"  data-mini="true" data-theme="a" data-content-theme="b">
+			<h3>Example - Read value</h3>
+			<div id="examp1" style="font-size:70%">
+				function OnStart()<br>
+				{<br>
+					&nbsp;&nbsp;ioio = app.CreateIOIO();<br>
+					&nbsp;&nbsp;ioio.SetOnConnect( ioio_OnConnect );<br>
+					&nbsp;&nbsp;ioio.CheckConnection();<br>
+				}<br><br>
+				function ioio_OnConnect()<br>
+				{<br>
+					&nbsp;&nbsp;app.ShowPopup( "Connected!" );<br>
+					<b id="snip1"  style="font-size:100%">
+					&nbsp;&nbsp;input = ioio.CreateDigitalInput( 12, "PullDown" );<br>
+					</b>
+					&nbsp;&nbsp;setInterval( "ReadValue()",3000 );<br>
+				}<br><br>
+				function ReadValue() {<br>
+					&nbsp;&nbsp;app.ShowPopup( input.Read(), "Short" );<br>
+				}
+			</div>
+			<div name="divCopy" align="right">
+				<a href="#" data-role="button" data-mini="true" data-inline="true" onclick="copy(snip1)">&nbsp;&nbsp;Copy&nbsp;&nbsp;</a>
+				<a href="#" data-role="button" data-mini="true" data-inline="true" onclick="copy(examp1)">Copy All</a>
+				<a href="#" data-role="button" data-mini="true" data-inline="true" onclick="demo(examp1)">&nbsp;&nbsp;&nbsp;Run&nbsp;&nbsp;&nbsp;</a>
+			</div>
+		</div>
+		
+		<p>You can also use the <b>WatchForValue</b> and <b>SetOnValue</b> functions to have one of your own functions called when a 
+		pin changes to a given state.</p> 
+		
+		<p>This is useful if the pin only goes high for a fraction of a second which might be missed if you simply keep checking the 
+		current value with a timer. (Your function is only called once, so you will need to call the WatchForValue function again
+		to reset the watch).</p>
+		
+		<div class="samp">&nbsp;input.SetOnValue( MyFunc );<br> &nbsp;input.WatchForValue();</div><br>
+		
+		<div data-role="collapsible" data-collapsed="true"  data-mini="true" data-theme="a" data-content-theme="b">
+			<h3>Example - Watch for value</h3>
+			<div id="examp2" style="font-size:70%">
+				function OnStart()<br>
+				{<br>
+					&nbsp;&nbsp;ioio = app.CreateIOIO();<br>
+					&nbsp;&nbsp;ioio.SetOnConnect( ioio_OnConnect );<br>
+					&nbsp;&nbsp;ioio.CheckConnection();<br>
+				}<br><br>
+				function ioio_OnConnect()<br>
+				{<br>
+					&nbsp;&nbsp;app.ShowPopup( "Connected!" );<br>
+					<b id="snip2"  style="font-size:100%">
+					&nbsp;&nbsp;input = ioio.CreateDigitalInput( 12, "PullDown" );<br>
+					&nbsp;input.SetOnValue( ShowValue );<br> 
+					&nbsp;input.WatchForValue( true );
+					</b>
+				}<br><br>
+				function ShowValue() {<br>
+					&nbsp;&nbsp;app.ShowPopup( input.Read(), "Short" );<br>
+				}
+			</div>
+			<div name="divCopy" align="right">
+				<a href="#" data-role="button" data-mini="true" data-inline="true" onclick="copy(snip2)">&nbsp;&nbsp;Copy&nbsp;&nbsp;</a>
+				<a href="#" data-role="button" data-mini="true" data-inline="true" onclick="copy(examp2)">Copy All</a>
+				<a href="#" data-role="button" data-mini="true" data-inline="true" onclick="demo(examp2)">&nbsp;&nbsp;&nbsp;Run&nbsp;&nbsp;&nbsp;</a>
+			</div>
+		</div>
+		
+		<br>	
+	
+	</div><!-- /content -->
+	
+</div><!-- /page -->
+
+</body>
+</html>
