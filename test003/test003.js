@@ -267,7 +267,7 @@ function OnStart()
     lay = app.CreateLayout( "Linear", "VCenter,FillXY" );
     //Create an absolute layout so we can position objects.
     layAbs = app.CreateLayout( "Absolute" );
-    lay.AddChild( layAbs );
+    lay.AddChild(layAbs);
     //
     bkg = addImg(-1, 0,0, 1,1);
     createMenu();
