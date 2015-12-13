@@ -5,19 +5,19 @@ function ImgDelegate(onDraw, onDown){
     onDraw:onDraw};
 }
 function ImgDelegateIdx(idx){
+    if (arguments.length < 1) return null;
     var name = (idx >=0 &&idx<img_n.length)?img_n[idx]:null;
     var image = app.CreateImage(name, 1, 1);
     if (!name){
         image.SetColor("#ffFFFFFF");
     }
-    var ddraw=function(img){
-        img.DrawImage(image,0,0,1,1,0);
-    };
+    function ddraw (img){img.DrawImage(image,0,0,1,1,0);};
     return ImgDelegate(ddraw, nullf);
 }
 function ImgDelegateCompose(imd1, imd2){
+    if (arguments.length < 2) return null;
     function f1(img){imd1.onDraw(img);imd2.onDraw(img);};
-    function f2(x,y){imd2.onDown(x,y);imd1.onDown(x,y);};
+    function f2(evt){imd2.onDown(evt);imd1.onDown(evt);};
     var res = ImgDelegate(f1, f2);
     res.decompose = function(){return [imd1, imd2];};
     return res;
@@ -32,20 +32,21 @@ function ImgDelegateVector(/*VECTOR OF DELEGATES*/){
 				                 return this.get();}
                  };
     function f1(img){state.get().onDraw(img);};
-    function f2(x,y){state.get().onDown(x,y);};
+    function f2(evt){state.get().onDown(evt);};
     var res = ImgDelegate(f1, f2);
     res.decompose = function(){return state.ids;};
     res.change = function(i){state.set(i);};
     return res;
 }
 function ImgDelegateRect(onDown){
-	return ImgDelegate(function(img){
+	function drawRect(img){
     	img.SetPaintColor("#FFC0C0C0");
     	img.SetPaintStyle("Line");
     	img.SetLineWidth(5);
 		var ex = 0.03; var ey = 0.07;
 		img.DrawRectangle(0+ex,0+ey, 1-ex,1-ey);
-	}, onDown);
+	};
+	return ImgDelegate(drawRect, onDown);
 }
 function genDrawFly(angle)
 {
@@ -95,7 +96,7 @@ var img_n=[
     "stop1.png",    //11
     //"", //12
 ];
-
+/*
 function addImg(idx, x,y, w,h)
 {
     var width=height=0.1;
@@ -122,6 +123,7 @@ function addImg2(idx, x,y, f){
     res.SetOnTouchDown(f);
     return res;
 }
+*/
 var prog_pos={x:0.7, y:0.6};
 var prog_len=0;
 var prog_max=9;
@@ -131,24 +133,34 @@ var field=[];
 
 function onDownDef(ev)
 {
-	if(ev.source.hasattr("def")){
-		var e = {
-			src:ev.source, 
+	var from = ev.source;
+	if(from.hasattr("def")){
+		var evt = {
+			src:from, 
 			x:ev.x[0], 
 			y:ev.y[0],
 			};
-		ev.source.def.onDown(e);
+		from.def.onDown(evt);
 	}
 }
-function addImgDef(x,y,df)
+function placeImage(x,y, w,h)
 {
-	var res = addImg(-1, x,y);
-	res.def = df;
-	df.onDraw(res);
+    var width=height=0.1;
+    if (arguments.length >= 4){width=w; height=h;}
+    var res = app.CreateImage(null, width, height);
+    res.SetColor("#00FFFFFF");
+    if (arguments.length >= 2){res.SetPosition(x, y);}
+    layAbs.AddChild(res);
+    return res;
+}
+function addImgDef(x,y,imgDlgt)
+{
+	var res = placeImage(x,y);
+	res.def = imgDlgt;
+	imgDlgt.onDraw(res);
     res.SetTouchable(true);
     res.SetOnTouchDown(onDownDef);
     return res;
-	
 }
 
 function onDown0(ev){
@@ -163,8 +175,8 @@ function onDownD(ev){
     if(prog_len>0)
     {
         prog_len--;
-        prog[prog_len].SetVisibility("Hide");
-        prog[prog_len] = null;
+        //prog[prog_len].SetVisibility("Hide");
+        //prog[prog_len] = null;
     }
 }
 function cmd2img(cmd){
@@ -192,44 +204,62 @@ function addToProg(cmd){
     }
     var i_idx = cmd2img(cmd);
     var i_pos = len2pos(prog_len, prog_pos.x, prog_pos.y, 3);
-    prog[prog_len] = addImg2(i_idx, i_pos.x, i_pos.y , onDownD);
+    //prog[prog_len] = addImg2(i_idx, i_pos.x, i_pos.y , onDownD);
     prog_int[prog_len] = cmd;
     prog_len++;
 }
 
-function createRectFld(idx, x_pos, y_pos, cols, rows,alfa){
-    //var a=(arguments.length >=6)?alfa:1;
-	var dd = ImgDelegateRect(nullf);
+function createRectFld(x_pos, y_pos, cols, rows, defImgDelegate){
+    var dd = defImgDelegate;
+	if(arguments.length < 5) dd = ImgDelegateRect(nullf);
+	var res = [];
+	var l = 0;
     for(var i = 0; i<rows; i++){
         for(var j=0; j<cols; j++){
             var x=x_pos + j*0.1;
             var y=y_pos + i*0.1;
-            addImgDef(x,y, dd);
+            res[l] = addImgDef(x,y, dd);
+			l++;
         }
     }
+	return res;
 }
 
 function createMenu(){
-    createRectFld(10, 0.2, 0.0, 4, 1, 0.1);
-    var mg = addImg2(8, 0.2, 0.0, onDown0);
+	var def = ImgDelegateVector(
+		ImgDelegateIdx(8),
+		ImgDelegateIdx(6),
+		ImgDelegateIdx(7),
+		ImgDelegateIdx(9)
+	);
+    var res = createRectFld(0.2,0.0, 4, 1, def);
+	app.ShowPopup(''+def.onDraw,"ERR");
+	res[0].def.change(0);
+	res[1].def.change(1);
+	res[2].def.change(2);
+	res[3].def.change(3);
+
+    /*var mg = addImg2(8, 0.2, 0.0, onDown0);
     var ml = addImg2(6, 0.3, 0.0, onDown1);
     var mr = addImg2(7, 0.4, 0.0, onDown2);
     var me = addImg2(9, 0.5, 0.0, onDown3);
+	*/
 }
 function createControls(){
-    createRectFld(10, 0.8, 0, 2,2, 0.1);
-    var cg = addImg2(1, 0.8, 0, doRun);
+    createRectFld(0.8, 0, 2,2, 0.1);
+    /*var cg = addImg2(1, 0.8, 0, doRun);
     var cs = addImg(11, 0.9, 0);
     var cp = addImg(2, 0.8, 0.1);
     var cr = addImg(3, 0.9, 0.1);
+	*/
 }
 
 function createProg(){
-    createRectFld(10, prog_pos.x, prog_pos.y, 3, 3, 0.1);
+    createRectFld(prog_pos.x, prog_pos.y, 3, 3);
 }
 function createField(){
-    createRectFld(10, 0, 0.2, 5, 5, 0.1);
-    field[0] = addImg(0, 0, 0.2);
+    createRectFld(0, 0.2, 5, 5);
+    //field[0] = addImg(0, 0, 0.2);
 }
 
 function doRun()
@@ -269,7 +299,12 @@ function OnStart()
     layAbs = app.CreateLayout( "Absolute" );
     lay.AddChild(layAbs);
     //
-    bkg = addImg(-1, 0,0, 1,1);
+    //bkg = addImg(-1, 0,0, 1,1);
+	var bkg = placeImage(0,0, 1,1);
+	bkg.SetPaintStyle("Fill");
+	bkg.SetColor("ffFFFFFF");
+	bkg.DrawRectangle(0,0, 1,1);
+
     createMenu();
     createControls();
     createProg();
