@@ -6,6 +6,7 @@
     <meta http-equiv="cache-control" content="no-cache, must-revalidate" />
     <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="tabdrop/css/tabdrop.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <link href="ide.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="resources/dsicon.png">
   </head>
@@ -18,8 +19,8 @@
 		      		<a id="ideTitle" class="brand" href="#"><img src="resources/droidscript.png" style="vertical-align:text-bottom; height:24px" alt="DroidScript"/></a>	 
 		    	</div>
 		    	<div class="container pull-right">
-		    		<img id="ideConnected" class="brand" src="resources/connected.png" alt="disconnected" style="padding-left: 0; display: none"/>
-		    		<img id="ideDisconnected" class="brand" src="resources/disconnected.png" alt="disconnected" style="padding-left: 0"/>		    		
+		    		<i id="ideConnected" class="fa fa-wifi connected-green brand" style="padding-left: 0; display: none"></i>
+		    		<i id="ideDisconnected" class="fa fa-wifi disconnected-red brand" style="padding-left: 0"></i>
 		    	</div>
 		  	</div>
 		</div>
@@ -30,7 +31,7 @@
 					<ul class="nav nav-tabs" id="leftPanelTabs" style="margin-right: 0px; height: 100%; margin-bottom: 0px;">
 						<li data-toggle="tooltip" data-placement="right" title="Apps"><a href="#appsTab" data-toggle="tab" style="min-width:0px"><i class="icon-th"></i></a></li>
 						<li data-toggle="tooltip" data-placement="right" title="Editor" class="active"><a href="#editorTab" data-toggle="tab" style="min-width:0px"><i class="icon-pencil"></i></a></li>
-						<li data-toggle="tooltip" data-placement="right" title="Assets"><a class="no-min-width" href="#assetsTab" data-toggle="tab" style="min-width:0px"><i class="icon-picture"></i></a></li>				  		
+						<li data-toggle="tooltip" data-placement="right" title="Assets"><a class="no-min-width" href="#assetsTab" data-toggle="tab" style="min-width:0px"><i class="icon-picture"></i></a></li>
 					</ul>
 					<div class="tab-content" style="height: 100%; overflow: hidden; box-shadow: 0px 0px 5px #E0E0E0;">
 					    <div class="tab-pane active" id="editorTab" style="height: 100%;">
@@ -81,7 +82,7 @@
 									    </div>
 									    <div class="upload-button">								    	
 									    	<form id="imageUploadForm" action="uploader" method="post" enctype="multipart/form-data" style="display:none">
-									      		<input id="imageUploadFile" type="file" accept="image/png,image/jpeg" style="display:none" multiple>
+									      		<input id="imageUploadFile" type="file" accept="image/png,image/jpeg,image/svg+xml" style="display:none" multiple>
 									      	</form>
 											<a id="imgUploadBtn" class="btn btn-mini btn-flat btn-noborder" data-toggle="tooltip" title="Add a new Image Asset"><i class="icon-upload"></i></a>
 									    </div>
@@ -101,7 +102,7 @@
 									    </div>
 									    <div class="upload-button">
 									    	<form id="soundUploadForm" action="uploader" method="post" enctype="multipart/form-data" style="display:none">
-									      		<input id="soundUploadFile" type="file" accept="audio/ogg,audio/mpeg" style="display:none" multiple>
+									      		<input id="soundUploadFile" type="file" accept="audio/ogg,audio/mpeg,audio/wav" style="display:none" multiple>
 									      	</form>
 										  	<a id="sndUploadBtn" class="btn btn-mini btn-flat btn-noborder" data-toggle="tooltip" title="Add a new Sound Asset"><i class="icon-upload"></i></a>
 									    </div>
@@ -354,7 +355,8 @@
 		                <li><a tabindex="-1" href="#">Script</a></li>
 						<li><a tabindex="-1" href="#">Text</a></li>
 						<li><a tabindex="-1" href="#">HTML</a></li>
-						<li><a tabindex="-1" href="#">CSS</a></li>
+						<li><a tabindex="-1" href="#">CSS</a></li><li>
+						<li><a tabindex="-1" href="#">JSON</a></li>
 		            </ul>
 		        </div>
 
