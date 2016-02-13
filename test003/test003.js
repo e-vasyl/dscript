@@ -4,8 +4,9 @@ function ImgDelegate(onDraw, onDown){
     return {onDown:onDown,
     onDraw:onDraw};
 }
-function ImgDelegateIdx(idx){
+function ImgDelegateIdx(idx, onDown){
     if (arguments.length < 1) return null;
+    if (arguments.length < 2) onDown = nullf;
     var name = (idx >=0 &&idx<img_n.length)?img_n[idx]:null;
     var image = app.CreateImage(name, 1, 1);
     if (!name){
@@ -14,7 +15,7 @@ function ImgDelegateIdx(idx){
     function ddraw (img){
         //img.SetColor("#00FFFFFF");
 		img.DrawImage(image,0,0,1,1,0);};
-    return ImgDelegate(ddraw, nullf);
+    return ImgDelegate(ddraw, onDown);
 }
 function ImgDelegateCompose(imd1, imd2){
     if (arguments.length < 2) return null;
@@ -140,6 +141,26 @@ function addImgDef(x,y,imgDlgt)
     res.SetOnTouchDown(onDownDef);
     return res;
 }
+function composeImgDef(img, imgDlgt)
+{
+	var dlg_old = img.def;
+    img.def = ImgDelegateCompose(imgDlgt,dlg_old);
+    img.SetColor("#00FFFFFF");
+	img.def.onDraw(img);
+	return dlg_old;
+}
+function decomposeImgDef(img)
+{
+	var dlg_old = img.def;
+	if (dlg_old.decompose){
+		var decomp = dlg_old.decompose();
+		//app.ShowPopup("z"+decomp,"ERROR");
+		img.def = decomp[decomp.length-1];
+		img.SetColor("#00FFFFFF");
+		img.def.onDraw(img);
+	}
+	return dlg_old;
+}
 
 function cmd2img(cmd){
     if (cmd==0)return 8;
@@ -158,10 +179,20 @@ function addToProg(cmd){
         app.ShowPopup("no space left","ERROR");
         return;
     }
-    var i_idx = cmd2img(cmd);
-	var dlg = prog[prog_len].def;
-    prog[prog_len].def = ImgDelegateCompose(ImgDelegateIdx(i_idx),dlg);
-	prog[prog_len].def.onDraw(prog[prog_len]);
+	var pl = prog_len;
+
+	function onDel(ev)
+	{
+		if (prog_len == pl+1)
+		{
+			//app.ShowPopup("p="+pl+":"+prog_len,"ERROR");
+			prog_len--;
+			decomposeImgDef(ev.src);
+		}
+	}
+	
+    var dlgt = ImgDelegateIdx(cmd2img(cmd), onDel);
+	composeImgDef(prog[prog_len], dlgt);
 	//addImg2(i_idx, i_pos.x, i_pos.y , onDownD);
     prog_int[prog_len] = cmd;
     prog_len++;
