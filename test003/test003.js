@@ -2,7 +2,11 @@
 function nullf(){}
 function ImgDelegate(onDraw, onDown){
     return {onDown:onDown,
-    onDraw:onDraw};
+    onDraw:onDraw,
+	redraw: function(img){
+		img.SetColor("#00FFFFFF");
+		onDraw(img);
+		}};
 }
 function ImgDelegateIdx(idx, onDown){
     if (arguments.length < 1) return null;
@@ -33,14 +37,17 @@ function ImgDelegateVector(/*VECTOR OF DELEGATES*/){
                  //ids:arguments, 
                  get:function(){return ids[this.idx];},
                  set:function(i){if(i>=0 && i<idsl){this.idx=i;}},
-				 next:function(){this.idx=(this.idx+1)%idsl;
-				                 return this.get();}
+				 setdm:function(d){this.idx=(this.idx+d)%idsl;},
+				 next:function(){this.setdm(+1);},
+				 prev:function(){this.setdm(idsl-1);},
                  };
     function f1(img){state.get().onDraw(img);};
     function f2(evt){state.get().onDown(evt);};
     var res = ImgDelegate(f1, f2);
     res.decompose = function(){return ids;};
     res.change = function(i){state.set(i);};
+	res.next = function(){state.next();};
+	res.prev = function(){state.prev();};
     return res;
 }
 function ImgDelegateRect(onDown){
@@ -108,6 +115,7 @@ var prog_max=9;
 var prog=[];
 var prog_int=[];
 var field=[];
+var fly=null;
 
 function onDownDef(ev)
 {
@@ -127,7 +135,6 @@ function placeImage(x,y, w,h)
     var width=height=0.1;
     if (arguments.length >= 4){width=w; height=h;}
     var res = app.CreateImage(null, width, height);
-    res.SetColor("#00FFFFFF");
     if (arguments.length >= 2){res.SetPosition(x, y);}
     layAbs.AddChild(res);
     return res;
@@ -136,7 +143,7 @@ function addImgDef(x,y,imgDlgt)
 {
 	var res = placeImage(x,y);
 	res.def = imgDlgt;
-	imgDlgt.onDraw(res);
+	imgDlgt.redraw(res);
     res.SetTouchable(true);
     res.SetOnTouchDown(onDownDef);
     return res;
@@ -145,8 +152,7 @@ function composeImgDef(img, imgDlgt)
 {
 	var dlg_old = img.def;
     img.def = ImgDelegateCompose(imgDlgt,dlg_old);
-    img.SetColor("#00FFFFFF");
-	img.def.onDraw(img);
+	img.def.redraw(img);
 	return dlg_old;
 }
 function decomposeImgDef(img)
@@ -154,10 +160,8 @@ function decomposeImgDef(img)
 	var dlg_old = img.def;
 	if (dlg_old.decompose){
 		var decomp = dlg_old.decompose();
-		//app.ShowPopup("z"+decomp,"ERROR");
 		img.def = decomp[decomp.length-1];
-		img.SetColor("#00FFFFFF");
-		img.def.onDraw(img);
+		img.def.redraw(img);
 	}
 	return dlg_old;
 }
@@ -180,20 +184,15 @@ function addToProg(cmd){
         return;
     }
 	var pl = prog_len;
-
-	function onDel(ev)
-	{
-		if (prog_len == pl+1)
-		{
-			//app.ShowPopup("p="+pl+":"+prog_len,"ERROR");
+	function onDel(ev){
+		if (prog_len == pl+1){
 			prog_len--;
 			decomposeImgDef(ev.src);
 		}
 	}
-	
     var dlgt = ImgDelegateIdx(cmd2img(cmd), onDel);
+
 	composeImgDef(prog[prog_len], dlgt);
-	//addImg2(i_idx, i_pos.x, i_pos.y , onDownD);
     prog_int[prog_len] = cmd;
     prog_len++;
 }
@@ -245,35 +244,54 @@ function createProg(){
 }
 function createField(){
     createRectFld(0, 0.2, 5, 5);
-    //field[0] = addImg(0, 0, 0.2);
+	
+	var dlgt=ImgDelegateVector(
+		ImgDelegate(genDrawFly(0), nullf),
+		ImgDelegate(genDrawFly(1), nullf),
+		ImgDelegate(genDrawFly(2), nullf),
+		ImgDelegate(genDrawFly(3), nullf));
+	fly = addImgDef(0, 0.2, dlgt);
+}
+
+var curr_state={};
+function nextRunStep()
+{
+	if (curr_state.i >= prog_len)
+		return;
+		
+		
+        var c = prog_int[curr_state.i];
+        if(c == 0){
+            curr_state.x = curr_state.x + curr_state.dx;
+            curr_state.y = curr_state.y + curr_state.dy;
+            fly.SetPosition(curr_state.x, curr_state.y);
+        }
+        if(c == 1){
+            var t = curr_state.dx;
+            curr_state.dx = (curr_state.dy>0.02)?curr_state.dy:-curr_state.dy;
+            curr_state.dy = -t;
+			fly.def.prev();
+			fly.def.redraw(fly);	
+        }
+        if(c == 2){
+            var t = curr_state.dx;
+            curr_state.dx = (curr_state.dy>0.02)?-curr_state.dy:curr_state.dy;
+            curr_state.dy = t;
+			fly.def.next();
+			fly.def.redraw(fly);	
+        }
+		
+		curr_state.i++;
+		setTimeout("nextRunStep()", 200);
 }
 
 function doRun()
 {
-    var x = 0;
-    var y = 0.2;
-    var dx = 0.1;
-    var dy = 0;
-    for(var i = 0; i < prog_len;i++)
-    {
-        var c = prog_int[i];
-        if(c == 0){
-            x = x + dx;
-            y = y + dy;
-//            field[0].SetPosition(x, y);
-        }
-        if(c == 1){
-            var t = dx;
-            dx = (dy>0.02)?dy:-dy;
-            dy = -t;
-            //field[0].SetAngle(90);
-        }
-        if(c == 2){
-            var t = dx;
-            dx = (dy>0.02)?-dy:dy;
-            dy = t;
-        }
-    }
+    curr_state={i:0, x:0,y:0.2, dx:0.1,dy:0};
+	fly.SetPosition(curr_state.x, curr_state.y);
+	fly.def.change(0);
+	fly.def.redraw(fly);
+	nextRunStep();
 }
 
 //Called when application is started.
