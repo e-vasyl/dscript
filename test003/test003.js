@@ -242,15 +242,50 @@ function createControls(){
 function createProg(){
     prog = createRectFld(0.7, 0.6, 3, 3);
 }
+var field_info={x:0, y:0.2, pos:[]};
+function delTarget(i, j){
+	for(var k = 0; k < field_info.pos.length; k++){
+		var p = field_info.pos[k];
+		if (p[0] == i && p[1] == j)
+		{
+			var l = i + j * 5;
+			decomposeImgDef(field[l]);
+			field_info.pos[k] = [-1, -1];
+		}
+	}
+}
+function setTargets(){
+	function addTarget(i, j){
+		var x = field_info.x + 0.1*i;
+		var y = field_info.y + 0.1*j;
+		var l = i + j * 5;
+		composeImgDef(field[l], ImgDelegateIdx(4));
+		return [i,j];
+	}
+	for(var i = 0; i < field_info.pos.length; i++){
+		if (field_info.pos[i][0] > -1){
+			var l = field_info.pos[i][0] + field_info.pos[i][1] * 5;
+			decomposeImgDef(field[l]);
+		}
+			
+	}
+	
+	field_info.pos=[
+		addTarget(0,0), 
+		addTarget(1,1),
+		addTarget(2,2)
+			 ];
+}
 function createField(){
-    createRectFld(0, 0.2, 5, 5);
+    field = createRectFld(field_info.x, field_info.y, 5, 5);
+	setTargets();
 	
 	var dlgt=ImgDelegateVector(
 		ImgDelegate(genDrawFly(0), nullf),
 		ImgDelegate(genDrawFly(1), nullf),
 		ImgDelegate(genDrawFly(2), nullf),
 		ImgDelegate(genDrawFly(3), nullf));
-	fly = addImgDef(0, 0.2, dlgt);
+	fly = addImgDef(field_info.x, field_info.y, dlgt);
 }
 
 var curr_state={};
@@ -259,36 +294,40 @@ function nextRunStep()
 	if (curr_state.i >= prog_len)
 		return;
 		
-		
+		var s=[[1, 0],[0, 1],[-1, 0],[0, -1]];
         var c = prog_int[curr_state.i];
         if(c == 0){
-            curr_state.x = curr_state.x + curr_state.dx;
-            curr_state.y = curr_state.y + curr_state.dy;
-            fly.SetPosition(curr_state.x, curr_state.y);
+            curr_state.x += s[curr_state.dir][0];
+            curr_state.y += s[curr_state.dir][1];
+			var x = field_info.x + curr_state.x * 0.1;
+			var y = field_info.y + curr_state.y * 0.1;
+            fly.SetPosition(x, y);
         }
         if(c == 1){
             var t = curr_state.dx;
-            curr_state.dx = (curr_state.dy>0.02)?curr_state.dy:-curr_state.dy;
-            curr_state.dy = -t;
+            curr_state.dir = (curr_state.dir + 3) % 4;
 			fly.def.prev();
 			fly.def.redraw(fly);	
         }
         if(c == 2){
-            var t = curr_state.dx;
-            curr_state.dx = (curr_state.dy>0.02)?-curr_state.dy:curr_state.dy;
-            curr_state.dy = t;
+            curr_state.dir = (curr_state.dir + 1) % 4;
 			fly.def.next();
 			fly.def.redraw(fly);	
+        }
+        if(c == 3){
+            delTarget(curr_state.x, curr_state.y);	
         }
 		
 		curr_state.i++;
 		setTimeout("nextRunStep()", 200);
+		//app.ShowPopup(curr_state.dir+"","LOG");
 }
 
 function doRun()
 {
-    curr_state={i:0, x:0,y:0.2, dx:0.1,dy:0};
-	fly.SetPosition(curr_state.x, curr_state.y);
+	setTargets();
+    curr_state={i:0, x:0, y:0, dir:0};
+	fly.SetPosition(field_info.x, field_info.y);
 	fly.def.change(0);
 	fly.def.redraw(fly);
 	nextRunStep();
