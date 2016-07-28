@@ -60,6 +60,15 @@ function ImgDelegateRect(onDown){
 	};
 	return ImgDelegate(drawRect, onDown);
 }
+//
+function Timer(cbFunc, timeout)
+{
+	return {
+		_r: setInterval(cbFunc, timeout),
+		stop: function(){clearInterval(this._r);}
+	};
+}
+//
 function genDrawFly(angle)
 {
     var c=0.5;
@@ -69,7 +78,7 @@ function genDrawFly(angle)
     
     var t1a=c;      var t1b=c-s*0.2; var t1c=c+s*0.2;
     var t2a=c-s*0.1;var t2b=c+s*0.2; var t2c=c;
-    var t3a=c+s*0.2;var t3b=c+s*0.25;var t3c=c-s*0.05;var t3d=c+s*0.05;
+    var t3a=c+s*0.2;var t3b=c+s*0.25;var t3c=c-s*0.06;var t3d=c+s*0.06;
 
     var x1a=Z(t1a,t1b);var y1a=Z(t1b,t1a);
     var x1b=Z(t1a,t1c);var y1b=Z(t1c,t1a);
@@ -230,10 +239,10 @@ function createControls(){
 	function hf(i, f){return ImgDelegateCompose(ImgDelegateIdx(i),
 		                   ImgDelegateRect(f));};
 	var buttons = [
-		hf(1,function(){doRun();}),
-		hf(11,nullf),
-		hf(2,nullf),
-		hf(3,nullf)
+		hf(1,function(){curr_state.start();}),
+		hf(11,function(){curr_state.stop();}),
+		hf(2,function(){initState();}),
+		hf(3,function(){curr_state.step();})
 	];
 	
     createRectFld(0.8, 0.0, 2, 2, buttons);
@@ -292,7 +301,10 @@ var curr_state={};
 function nextRunStep()
 {
 	if (curr_state.i >= prog_len)
+	{
+		curr_state.stop();
 		return;
+	}
 		
 		var s=[[1, 0],[0, 1],[-1, 0],[0, -1]];
         var c = prog_int[curr_state.i];
@@ -319,18 +331,25 @@ function nextRunStep()
         }
 		
 		curr_state.i++;
-		setTimeout("nextRunStep()", 200);
+		//setTimeout("nextRunStep()", 200);
 		//app.ShowPopup(curr_state.dir+"","LOG");
 }
-
-function doRun()
+function initState()
 {
+	if (curr_state.t)
+	{
+		curr_state.stop();
+	}
 	setTargets();
-    curr_state={i:0, x:0, y:0, dir:0};
+    curr_state={i:0, x:0, y:0, dir:0, 
+	t: null,
+	step:nextRunStep,
+	start:function(){this.stop(); this.t = Timer(nextRunStep, 200);},
+	stop:function(){if(this.t){this.t.stop(); this.t=null;}}
+	};
 	fly.SetPosition(field_info.x, field_info.y);
 	fly.def.change(0);
 	fly.def.redraw(fly);
-	nextRunStep();
 }
 
 //Called when application is started.
@@ -351,6 +370,7 @@ function OnStart()
     createControls();
     createProg();
     createField();
+	initState();
     //
     //Add layout to app.    
     app.AddLayout( lay );
