@@ -181,12 +181,6 @@ function cmd2img(cmd){
     if (cmd==2)return 7;
     if (cmd==3)return 9;
 }
-/*function ij2len(i,j, cols){
-	return i + j*cols;
-}
-function len2ij(l, cols){
-	return {i: l%cols, j: Math.floor(l/cols)};
-}*/
 function addToProg(cmd){
     if(prog_len >= prog_max){
         app.ShowPopup("no space left","ERROR");
@@ -251,39 +245,57 @@ function createControls(){
 function createProg(){
     prog = createRectFld(0.7, 0.6, 3, 3);
 }
-var field_info={x:0, y:0.2, pos:[]};
+//////
+var field_info={x:0, y:0.2, n:5, pos:[],
+	ij: function(i, j){return i + j * this.n;},
+	};
 function delTarget(i, j){
-	for(var k = 0; k < field_info.pos.length; k++){
-		var p = field_info.pos[k];
-		if (p[0] == i && p[1] == j)
-		{
-			var l = i + j * 5;
-			decomposeImgDef(field[l]);
-			field_info.pos[k] = [-1, -1];
-		}
+	var l = field_info.ij(i, j);
+	var k = field_info.pos.indexOf(l);
+	if (k > -1)
+	{
+		decomposeImgDef(field[l]);
+		field_info.pos[k] = [-1];
 	}
+}
+function loadTargets(){
+	var txt = app.ReadFile("./fld01");
+	var res = [];
+	if (!txt)
+		return res;
+		
+	var l = txt.split(";");
+	for (var i in l)
+	{
+		var p = l[i].split(",");
+		var x = parseInt(p[0]);
+		var y = parseInt(p[1]);
+		res.push([x, y]);
+	}
+	return res;
 }
 function setTargets(){
 	function addTarget(i, j){
-		var x = field_info.x + 0.1*i;
-		var y = field_info.y + 0.1*j;
-		var l = i + j * 5;
+		var l = field_info.ij(i, j);
 		composeImgDef(field[l], ImgDelegateIdx(4));
-		return [i,j];
+		return l;
 	}
+	// clear targets
 	for(var i = 0; i < field_info.pos.length; i++){
-		if (field_info.pos[i][0] > -1){
-			var l = field_info.pos[i][0] + field_info.pos[i][1] * 5;
+		var l = field_info.pos[i];
+		if (l > -1){
 			decomposeImgDef(field[l]);
 		}
-			
 	}
-	
-	field_info.pos=[
-		addTarget(0,0), 
-		addTarget(1,1),
-		addTarget(2,2)
-			 ];
+	var tpos = loadTargets();
+	var res = [];
+	for (var i in tpos)
+	{
+		var x = tpos[i][0];
+		var y = tpos[i][1];
+		res += [addTarget(x, y)];
+	}
+	field_info.pos = res;
 }
 function createField(){
     field = createRectFld(field_info.x, field_info.y, 5, 5);
@@ -305,7 +317,7 @@ function nextRunStep()
 		curr_state.stop();
 		return;
 	}
-		
+	
 		var s=[[1, 0],[0, 1],[-1, 0],[0, -1]];
         var c = prog_int[curr_state.i];
         if(c == 0){
@@ -331,7 +343,6 @@ function nextRunStep()
         }
 		
 		curr_state.i++;
-		//setTimeout("nextRunStep()", 200);
 		//app.ShowPopup(curr_state.dir+"","LOG");
 }
 function initState()
