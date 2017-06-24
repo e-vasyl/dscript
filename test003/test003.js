@@ -258,8 +258,13 @@ function delTarget(i, j){
 		field_info.pos[k] = [-1];
 	}
 }
-function loadTargets(){
+function loadData()
+{
 	var txt = app.ReadFile("./fld01");
+	field_info.targets = loadTargets(txt);
+	field_info.fences = loadField(txt);
+}
+function loadTargets(txt){
 	var res = [];
 	if (!txt)
 		return res;
@@ -274,6 +279,10 @@ function loadTargets(){
 	}
 	return res;
 }
+function loadField(txt)
+{
+	return [];
+}
 function setTargets(){
 	function addTarget(i, j){
 		var l = field_info.ij(i, j);
@@ -287,19 +296,18 @@ function setTargets(){
 			decomposeImgDef(field[l]);
 		}
 	}
-	var tpos = loadTargets();
 	var res = [];
-	for (var i in tpos)
+	for (var i in field_info.targets)
 	{
-		var x = tpos[i][0];
-		var y = tpos[i][1];
+		var x = field_info.targets[i][0];
+		var y = field_info.targets[i][1];
 		res += [addTarget(x, y)];
 	}
 	field_info.pos = res;
 }
 function createField(){
     field = createRectFld(field_info.x, field_info.y, 5, 5);
-	setTargets();
+	//setTargets();
 	
 	var dlgt=ImgDelegateVector(
 		ImgDelegate(genDrawFly(0), nullf),
@@ -310,6 +318,12 @@ function createField(){
 }
 
 var curr_state={};
+function canStep(x,y)
+{
+	if (x < 0 || y < 0 || x >= field_info.n || y >= field_info.n)
+		return false;
+	return true;
+}
 function nextRunStep()
 {
 	if (curr_state.i >= prog_len)
@@ -321,12 +335,17 @@ function nextRunStep()
 		var s=[[1, 0],[0, 1],[-1, 0],[0, -1]];
         var c = prog_int[curr_state.i];
         if(c == 0){
-            curr_state.x += s[curr_state.dir][0];
-            curr_state.y += s[curr_state.dir][1];
-			var x = field_info.x + curr_state.x * 0.1;
-			var y = field_info.y + curr_state.y * 0.1;
-            fly.SetPosition(x, y);
-        }
+            var x = curr_state.x + s[curr_state.dir][0];
+            var y = curr_state.y + s[curr_state.dir][1];
+			if (canStep(x, y))
+			{
+        		curr_state.x = x;
+    			curr_state.y = y;
+				var xp = field_info.x + x * 0.1;
+				var yp = field_info.y + y * 0.1;
+    			fly.SetPosition(xp, yp);
+			}
+    	}
         if(c == 1){
             var t = curr_state.dx;
             curr_state.dir = (curr_state.dir + 3) % 4;
@@ -352,11 +371,11 @@ function initState()
 		curr_state.stop();
 	}
 	setTargets();
-    curr_state={i:0, x:0, y:0, dir:0, 
-	t: null,
-	step:nextRunStep,
-	start:function(){this.stop(); this.t = Timer(nextRunStep, 200);},
-	stop:function(){if(this.t){this.t.stop(); this.t=null;}}
+    curr_state = {i:0, x:0, y:0, dir:0, 
+		t: null,
+		step:nextRunStep,
+		start:function(){this.stop(); this.t = Timer(nextRunStep, 200);},
+		stop:function(){if(this.t){this.t.stop(); this.t=null;}}
 	};
 	fly.SetPosition(field_info.x, field_info.y);
 	fly.def.change(0);
@@ -377,6 +396,8 @@ function OnStart()
 	bkg.SetColor("ffFFFFFF");
 	bkg.DrawRectangle(0,0, 1,1);
 
+	loadData();
+	
     createMenu();
     createControls();
     createProg();
